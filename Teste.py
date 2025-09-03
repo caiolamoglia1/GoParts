@@ -32,14 +32,12 @@ Reservatório de Água,K34343EU,R$ 75,-1
 # io.StringIO() transforma a string em um "arquivo" que o pandas pode ler
 df = pd.read_csv(io.StringIO(csv_data))
 
-print(f"✅ Dados carregados: {len(df)} produtos encontrados")
+
 print("\n📊 Visualização dos dados ANTES da limpeza:")
-print(df.head(5))  # Mostra apenas as primeiras 5 linhas
-print("...")
+print(df.to_string())  # Mostra todos os dados
 
-# ====================================================
-print("\n💰 Iniciando limpeza da coluna 'preco'...")
 
+# verificar os tipos de dados a serem substituídos #
 def normalizar_preco(valor) -> float:
     """
     Função para normalizar valores de preço em diferentes formatos.
@@ -53,8 +51,9 @@ def normalizar_preco(valor) -> float:
     
     Retorna:
     - float: Valor numérico limpo
-    - 0.0: Se não conseguir converter
+    - 0.0: Se for null ou inválido
     """
+   
     # Verifica se o valor é nulo
     if valor is None:
         return 0.0
@@ -66,12 +65,14 @@ def normalizar_preco(valor) -> float:
     if not s or s.lower() in {"nan", "none"}:
         return 0.0
     
-    # Remove o símbolo de moeda (R$) e espaços internos
+    # Remove (R$) e espaços internos
     s = s.replace("R$", "").replace(" ", "")
     
-    # LÓGICA PRINCIPAL: Determina como interpretar pontos e vírgulas
+    
+    # COMO interpretar pontos e vírgulas
+
     if "," in s and "." in s:
-        # Caso: "1.250,00" (formato brasileiro)
+        # Caso: "1.250,00" 
         # Ponto = separador de milhares, Vírgula = separador decimal
         s = s.replace(".", "").replace(",", ".")
         print(f"  🔄 Convertendo formato brasileiro: {valor} → {s}")
@@ -81,7 +82,6 @@ def normalizar_preco(valor) -> float:
         s = s.replace(",", ".")
         print(f"  🔄 Convertendo vírgula decimal: {valor} → {s}")
         
-    # Se só tem ponto, mantém como está (formato americano: 100.50)
     
     # Tenta converter para número
     try:
@@ -91,16 +91,17 @@ def normalizar_preco(valor) -> float:
         print(f"  ⚠️  Erro ao converter '{valor}' - usando 0.0")
         return 0.0
 
+print("\n" + "=" * 60)
 # Aplica a função de normalização em toda a coluna
-print("🔄 Processando todos os preços...")
+
 df['preco'] = df['preco'].astype(str)  # Garante que tudo seja string primeiro
 df['preco'] = df['preco'].apply(normalizar_preco)
-print("✅ Coluna 'preco' normalizada!")
+
 
 
 # Define quais valores considerar inválidos
 valores_invalidos = ['None', 'n/a', -1, '-1']
-print(f"📝 Valores considerados inválidos: {valores_invalidos}")
+
 
 # Substitui valores inválidos por 0
 df['estoque'] = df['estoque'].replace(valores_invalidos, 0)
@@ -111,16 +112,12 @@ df['estoque'] = df['estoque'].fillna(0)
 # Converte toda a coluna para números inteiros
 df['estoque'] = df['estoque'].astype(int)
 
-print("✅ Coluna 'estoque' normalizada!")
 
-# PASSO 6: LIMPEZA DA COLUNA 'NOME_PRODUTO'
-# =========================================
-print("\n🏷️  Iniciando limpeza da coluna 'nome_produto'...")
+#LIMPEZA DA COLUNA 'NOME_PRODUTO'
 
 # Remove espaços extras no início e fim dos nomes
 # Exemplo: " Bieleta  " → "Bieleta"
 df['nome_produto'] = df['nome_produto'].str.strip()
-
 
 # PASSO 7: SALVAR DADOS LIMPOS
 # ============================
@@ -128,19 +125,11 @@ df['nome_produto'] = df['nome_produto'].str.strip()
 output_filename = 'produtos_limpos.csv'
 df.to_csv(output_filename, index=False, encoding='utf-8-sig')
 
-print(f"✅ Arquivo '{output_filename}' salvo com sucesso!")
-
 # PASSO 8: EXIBIR RESULTADOS
 # ==========================
 print("\n" + "=" * 60)
-print("=" * 60)
-
-print(f"📊 Total de produtos processados: {len(df)}")
-print(f"� Total de itens em estoque: {df['estoque'].sum()}")
 
 print("\n🔍 Pré-visualização dos dados limpos:")
 print(df.to_string())
 
 print("\n" + "=" * 60)
-print("🎉 PROCESSO CONCLUÍDO COM SUCESSO!")
-print("=" * 60)
